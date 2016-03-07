@@ -20,6 +20,7 @@ Player::Player(Side side) {
  * Destructor for the player.
  */
 Player::~Player() {
+    // comment from Zach to change this file
 }
 
 /*
