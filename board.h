@@ -2,6 +2,7 @@
 #define __BOARD_H__
 
 #include <bitset>
+#include <iostream>
 #include "common.h"
 using namespace std;
 
