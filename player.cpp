@@ -63,32 +63,8 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         std::cerr << "Opponent made a move, I updated" << std::endl;
     }
 
-    /* RANDOM
-    // Make a random move
-    int n = 0; // Number of valid moves
-    Move *m = new Move(-1, -1);
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            Move here = Move(i, j);
-            if (board->checkMove(&here, us)) {
-                // With probability 1/m, choose the mth possible spot to 
-                // be the next move, and with probability 1 - 1/m, keep 
-                // the old move and discard the mth spot. This guarantees 
-                // that of the n total possible moves each is chosen with 
-                // probability 1/n.
-                n++;
-                double r = ((double) rand() / (RAND_MAX));
-                if (r < 1. / n) {
-                    m->setX(i);
-                    m->setY(j);
-                }
-            }
-        }
-    }
-    */
-    
     std::cerr << "Trying to pick a move" << std::endl;
-    Move *m = pickMove(0);
+    Move *m = pickMove(1);
     if (m) {
         std::cerr << "Doing move: (" << m->getX() << ", " << m->getY() << ")" << std::endl;
         board->doMove(m, us);
@@ -98,18 +74,6 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     }
     return m;
     
-    /* RANDOM
-    // Update board with our move if we could make one
-    if (n > 0) {
-        board->doMove(m, us);
-        return m;
-    }
-    else {
-        // No valid moves
-        return NULL;
-    }
-    */
-
 }
 
 Move *Player::pickMove(int depth) {
@@ -139,7 +103,10 @@ Move *Player::pickMove(int depth) {
     
     std::cerr << "  Nontrivial case, predicting opponent moves" << std::endl;
 
-    // Base case: consider opponent's next move, one level
+    if (depth < 1) {
+        std::cerr << "  FATAL ERROR: pickMove() called with depth < 1" << std::endl;
+        return NULL;
+    }
 
     int score_max = TINY_SCORE; // After their ideal move
     Move *our_ideal_m = new Move(-1, -1);
