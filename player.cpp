@@ -22,6 +22,17 @@ Player::Player(Side side) {
 }
 
 /*
+ * Constructor for the player; initialize everything here. The side your AI is
+ * on (BLACK or WHITE) is passed in as "side", and uses the board provided.
+ * The constructor must finish within 30 seconds.
+ */
+Player::Player(Side side, Board *b) {
+    board = b;
+    us = side;
+    them = (us == BLACK) ? WHITE : BLACK;
+}
+
+/*
  * Destructor for the player.
  */
 Player::~Player() {
