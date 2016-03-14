@@ -11,6 +11,11 @@ using namespace std;
 #define HUGE_SCORE 1000
 #define TINY_SCORE -1000
 
+struct MovePair {
+    Move *first;
+    Move *second;
+};
+
 class Player {
 
 public:
@@ -23,10 +28,11 @@ public:
     Board *board; // The board state for this player
 
     Move *doMove(Move *opponentsMove, int msLeft);
-    Move *pickMove(int depth);
+    MovePair *pickMove(Board *start_board, int depth);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
 };
+
 
 #endif
