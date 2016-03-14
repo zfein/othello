@@ -78,11 +78,11 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         std::cerr << "Couldn't find valid move" << std::endl;
     }
 
-    // Clean up the move package
+    // Clean up and return a pointer to our move
+    if (moves->second)
+        delete moves->second;
     delete moves;
-    std::cerr << "Deleted received moves" << std::endl;
-
-    // Return a pointer to our move
+    std::cerr << "Returning move" << std::endl;
     return m;
     
 }
@@ -188,7 +188,7 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
 
         // Update our ideal move
         if (their_moves.size() > 0) { // They had countermoves
-            our_work_board->doMove(their_ideal_m, them);
+            our_work_board->doMove(their_ideal_m_for_ours, them);
         }
         if (our_work_board->count(us) > score_max) {
             std::cerr << "      Our best move so far" << std::endl;
