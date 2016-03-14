@@ -69,7 +69,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Pick our ideal moves
     if (verbose)
         std::cerr << "Trying to pick a move" << std::endl;
-    MovePair *moves = pickMove(board, 1, verbose);
+    MovePair *moves = pickMove(board, 3, verbose);
     if (verbose)
         std::cerr << "Got moves" << std::endl;
     Move *m = moves->first;
