@@ -57,37 +57,45 @@ Player::~Player() {
  */
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
 
+    bool verbose = false;
+
     // Update board if the opponent just made a move
     if (opponentsMove) {
         board->doMove(opponentsMove, them);
-        std::cerr << "Opponent made a move, I updated" << std::endl;
+        if (verbose)
+            std::cerr << "Opponent made a move, I updated" << std::endl;
     }
 
     // Pick our ideal moves
-    std::cerr << "Trying to pick a move" << std::endl;
-    MovePair *moves = pickMove(board, 1);
-    std::cerr << "Got moves" << std::endl;
+    if (verbose)
+        std::cerr << "Trying to pick a move" << std::endl;
+    MovePair *moves = pickMove(board, 1, verbose);
+    if (verbose)
+        std::cerr << "Got moves" << std::endl;
     Move *m = moves->first;
 
     // Make it
     if (m) {
-        std::cerr << "Doing move: (" << m->getX() << ", " << m->getY() << ")" << std::endl;
+        if (verbose)
+            std::cerr << "Doing move: (" << m->getX() << ", " << m->getY() << ")" << std::endl;
         board->doMove(m, us);
     }
     else {
-        std::cerr << "Couldn't find valid move" << std::endl;
+        if (verbose)
+            std::cerr << "Couldn't find valid move" << std::endl;
     }
 
     // Clean up and return a pointer to our move
     if (moves->second)
         delete moves->second;
     delete moves;
-    std::cerr << "Returning move" << std::endl;
+    if (verbose)
+        std::cerr << "Returning move" << std::endl;
     return m;
     
 }
 
-MovePair *Player::pickMove(Board *start_board, int depth) {
+MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
 
     // Sanity check for depth argument
     if (depth < 1) {
@@ -95,7 +103,8 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
         return NULL;
     }
 
-    std::cerr << "  MEMORY: Received start_board at " << start_board << std::endl;
+    if (verbose)
+        std::cerr << "  MEMORY: Received start_board at " << start_board << std::endl;
     
     // Get our valid moves
     std::vector<Move *> our_moves;
@@ -108,7 +117,8 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
             else { delete here; }
         }
     }
-    std::cerr << "  Found " << our_moves.size() << " valid moves" << std::endl;
+    if (verbose)
+        std::cerr << "  Found " << our_moves.size() << " valid moves" << std::endl;
     
     // Prepare struct for output
     MovePair* moves = new MovePair;
@@ -119,7 +129,8 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
         moves->second = NULL;
         return moves;
     }
-    std::cerr << "  Nontrivial case, predicting opponent moves" << std::endl;
+    if (verbose)
+        std::cerr << "  Nontrivial case, predicting opponent moves" << std::endl;
 
     // Prepare to find our ideal move
     int score_max = TINY_SCORE; // After their ideal move
@@ -133,10 +144,14 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
 
         // Update our working board with our move
         Move *our_m = our_moves[i];
-        std::cerr << "    Considering our move (" << our_m->getX()
+        if (verbose)
+            std::cerr << "    Considering our move (" << our_m->getX()
         << ", " << our_m->getY() << ")" << std::endl;
         Board *our_work_board = start_board->copy();
-        std::cerr << "      MEMORY: Created our_work_board (copied start_board) at " << our_work_board << std::endl;
+        if (verbose) {
+            std::cerr << "      MEMORY: Created our_work_board (copied start_board) at "
+            << our_work_board << std::endl;
+        }
         our_work_board->doMove(our_m, us);
 
         // Get their valid moves
@@ -150,7 +165,8 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
                 else { delete here; }
             }
         }
-        std::cerr << "      Opponent has " << their_moves.size() << " valid countermoves" << std::endl;
+        if (verbose)
+            std::cerr << "      Opponent has " << their_moves.size() << " valid countermoves" << std::endl;
         
         // Prepare to find their ideal move
         int score_min = HUGE_SCORE; // After their trial move
@@ -161,56 +177,141 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
                 
             // Update their working board with their move
             Move *their_m = their_moves[j];
-            std::cerr << "      Considering their move (" << their_m->getX()
+            if (verbose)
+                std::cerr << "      Considering their move (" << their_m->getX()
             << ", " << their_m->getY() << ")" << std::endl;
             Board* their_work_board = our_work_board->copy();
-            std::cerr << "        MEMORY: Created their_work_board (copied our_work_board) at "
+            if (verbose)
+                std::cerr << "        MEMORY: Created their_work_board (copied our_work_board) at "
             << their_work_board << std::endl;
-            their_work_board->doMove(their_m, us);
+            their_work_board->doMove(their_m, them);
 
-            // Update their ideal move
+            // If requested, recursively get next two moves and update their working board
+            if (depth > 1) {
+
+                if (verbose)
+                    std::cerr << "        Attempting recursion" << std::endl;
+
+                MovePair* next_moves = pickMove(their_work_board, depth - 1, verbose);
+                
+                if (verbose)
+                    std::cerr << "        Recursion returned:" << std::endl;
+
+                if (next_moves->first) { // Our next ideal move exists
+                    
+                    if (verbose) {
+                        std::cerr << "          Our ideal move: ("
+                        << next_moves->first->getX() << ", "
+                        << next_moves->first->getY() << ")"
+                        << std::endl;
+                    }
+                    
+                    their_work_board->doMove(next_moves->first, us);
+
+                }
+                else {
+                    if (verbose)
+                        std::cerr << "          No ideal move for us" << std::endl;
+                }
+                if (next_moves->second) { // Their next ideal countermove exists
+                    
+                    if (verbose) {
+                        std::cerr << "          Their ideal countermove: ("
+                        << next_moves->second->getX() << ", "
+                        << next_moves->second->getY() << ")"
+                        << std::endl;
+                    }
+                    
+                    their_work_board->doMove(next_moves->second, them);
+
+                }
+                else {
+                    if (verbose)
+                        std::cerr << "          No ideal countermove for them" << std::endl;
+                }
+
+
+                delete next_moves;
+
+            }
+
+            // Update their ideal move using their working board
             if (their_work_board->count(us) < score_min) {
-                std::cerr << "        Their best move so far" << std::endl;
+                if (verbose)
+                   std::cerr << "        Their best move so far" << std::endl;
                 score_min = their_work_board->count(us); // New minimum score
                 their_ideal_m_for_ours = their_m;
             }
+
         
             // Clean up everything used for this one of their moves
-            std::cerr << "        MEMORY: Deleting their_work_board at " << their_work_board << std::endl;
+            if (verbose)
+                std::cerr << "        MEMORY: Deleting their_work_board at " << their_work_board << std::endl;
             delete their_work_board;
-            std::cerr << "        MEMORY: Deleted their_work_board successfully " << std::endl;
+            if (verbose)
+                std::cerr << "        MEMORY: Deleted their_work_board successfully " << std::endl;
 
         }
         
         // Found their ideal move
-        std::cerr << "      Opponent will do: (" << their_ideal_m_for_ours->getX()
-        << ", " << their_ideal_m_for_ours->getY() << ")" << std::endl;
+        if (verbose) {
+            std::cerr << "      Opponent will do: (" << their_ideal_m_for_ours->getX()
+            << ", " << their_ideal_m_for_ours->getY() << ")" << std::endl;
+        }
+
+        // Set up score
+        if (their_moves.size() > 0) { // They had countermoves
+            
+            // Update work board with their ideal countermove for this one of our moves
+            our_work_board->doMove(their_ideal_m_for_ours, them);
+
+            // their_ideal_m_for_ours is already filled
+
+        }
+        else { // They had no countermoves
+
+            // Work board is already updated
+
+            // They have no ideal countermove for this one of our moves
+            their_ideal_m_for_ours = NULL;
+
+        }
+
 
         // Update our ideal move
-        if (their_moves.size() > 0) { // They had countermoves
-            our_work_board->doMove(their_ideal_m_for_ours, them);
-        }
         if (our_work_board->count(us) > score_max) {
-            std::cerr << "      Our best move so far" << std::endl;
+            if (verbose)
+                std::cerr << "      Our best move so far" << std::endl;
             score_max = our_work_board->count(us); // New maximum score
             our_ideal_m = our_m;
             their_ideal_m = their_ideal_m_for_ours;
         }
 
         // Clean up everything used to calculate for this one of our moves
-        std::cerr << "      MEMORY: Deleting our_work_board at " << our_work_board << std::endl;
+        if (verbose)
+            std::cerr << "      MEMORY: Deleting our_work_board at " << our_work_board << std::endl;
         delete our_work_board;
-        std::cerr << "      MEMORY: Deleted our_work_board succesfully" << std::endl;
+        if (verbose)
+            std::cerr << "      MEMORY: Deleted our_work_board succesfully" << std::endl;
 
     }
 
     // Return move pair
-    std::cerr << "  Returning moves!" << std::endl;
-    std::cerr << "  We will do: (" << our_ideal_m->getX() << ", " << our_ideal_m->getY() << ")" << std::endl;
-    std::cerr << "  They should do: (" << their_ideal_m->getX() << ", " << their_ideal_m->getY() << ")" << std::endl;
-    std::cerr << "  Putting our move into output package" << std::endl; 
+    if (verbose) {
+        std::cerr << "  Returning moves!" << std::endl;
+        std::cerr << "  We will do: (" << our_ideal_m->getX() << ", " << our_ideal_m->getY() << ")" << std::endl;
+        if (their_ideal_m) {
+            std::cerr << "  They should do: (" << their_ideal_m->getX() << ", "
+            << their_ideal_m->getY() << ")" << std::endl;
+        }
+        else {
+            std::cerr << "  They will have no countermoves" << std::endl;
+        }
+        std::cerr << "  Putting our move into output package" << std::endl; 
+    }
     moves->first = our_ideal_m;
-    std::cerr << "  Putting their expected move into output package" << std::endl; 
+    if (verbose)
+        std::cerr << "  Putting their expected move into output package" << std::endl; 
     moves->second = their_ideal_m;
     return moves;
 

@@ -28,10 +28,11 @@ public:
     Board *board; // The board state for this player
 
     Move *doMove(Move *opponentsMove, int msLeft);
-    MovePair *pickMove(Board *start_board, int depth);
+    MovePair *pickMove(Board *start_board, int depth, bool verbose);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
+
 };
 
 
