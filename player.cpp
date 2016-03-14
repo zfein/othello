@@ -66,6 +66,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Pick our ideal moves
     std::cerr << "Trying to pick a move" << std::endl;
     MovePair *moves = pickMove(board, 1);
+    std::cerr << "Got moves" << std::endl;
     Move *m = moves->first;
 
     // Make it
@@ -76,6 +77,10 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     else {
         std::cerr << "Couldn't find valid move" << std::endl;
     }
+
+    // Clean up the move package
+    delete moves;
+    std::cerr << "Deleted received moves" << std::endl;
 
     // Return a pointer to our move
     return m;
@@ -89,6 +94,8 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
         std::cerr << "  FATAL ERROR: pickMove() called with depth < 1" << std::endl;
         return NULL;
     }
+
+    std::cerr << "  MEMORY: Received start_board at " << start_board << std::endl;
     
     // Get our valid moves
     std::vector<Move *> our_moves;
@@ -97,7 +104,6 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
             Move *here = new Move(i, j);
             if (start_board->checkMove(here, us)) {
                 our_moves.push_back(here);
-                std::cerr << "  Considering move: (" << i << ", " << j << ")" << std::endl;
             }
             else { delete here; }
         }
@@ -105,7 +111,7 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
     std::cerr << "  Found " << our_moves.size() << " valid moves" << std::endl;
     
     // Prepare struct for output
-    MovePair* moves;
+    MovePair* moves = new MovePair;
 
     // Handle trivial base case
     if (our_moves.size() == 0) { // No moves
@@ -118,22 +124,20 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
     // Prepare to find our ideal move
     int score_max = TINY_SCORE; // After their ideal move
     Move *our_ideal_m = new Move(-1, -1);
-    Board *our_work_board = start_board->copy();
 
     // Prepare ahead to find their ideal move
     Move *their_ideal_m = new Move(-1, -1);
-    Board *their_work_board = our_work_board->copy();
 
     // For each of our moves...
     for (unsigned int i = 0; i < our_moves.size(); i++) {
 
         // Update our working board with our move
         Move *our_m = our_moves[i];
-        our_work_board = start_board->copy();
-        our_work_board->doMove(our_m, us);
-        
-        std::cerr << "    Predicting opponent moves after (" << our_m->getX()
+        std::cerr << "    Considering our move (" << our_m->getX()
         << ", " << our_m->getY() << ")" << std::endl;
+        Board *our_work_board = start_board->copy();
+        std::cerr << "      MEMORY: Created our_work_board (copied start_board) at " << our_work_board << std::endl;
+        our_work_board->doMove(our_m, us);
 
         // Get their valid moves
         std::vector<Move *> their_moves;
@@ -142,57 +146,71 @@ MovePair *Player::pickMove(Board *start_board, int depth) {
                 Move *here = new Move(j, k);
                 if (our_work_board->checkMove(here, us)) {
                     their_moves.push_back(here);
-                    std::cerr << "      Opponent could try: (" << j << ", " << k << ")" << std::endl;
                 }
                 else { delete here; }
             }
         }
+        std::cerr << "      Opponent has " << their_moves.size() << " valid countermoves" << std::endl;
         
         // Prepare to find their ideal move
         int score_min = HUGE_SCORE; // After their trial move
+        Move *their_ideal_m_for_ours = new Move(-1, -1);
 
         // For each of their moves...
         for (unsigned int j = 0; j < their_moves.size(); j++) {
                 
-                // Update their working board with their move
-                Move *their_m = their_moves[j];
-                their_work_board = our_work_board->copy();
-                their_work_board->doMove(their_m, us);
+            // Update their working board with their move
+            Move *their_m = their_moves[j];
+            std::cerr << "      Considering their move (" << their_m->getX()
+            << ", " << their_m->getY() << ")" << std::endl;
+            Board* their_work_board = our_work_board->copy();
+            std::cerr << "        MEMORY: Created their_work_board (copied our_work_board) at "
+            << their_work_board << std::endl;
+            their_work_board->doMove(their_m, us);
 
-                // Update their ideal move
-                if (their_work_board->count(us) < score_min) {
-                    std::cerr << "      Their best move so far" << std::endl;
-                    score_min = their_work_board->count(us); // New minimum score
-                    their_ideal_m = their_m;
-                }
+            // Update their ideal move
+            if (their_work_board->count(us) < score_min) {
+                std::cerr << "        Their best move so far" << std::endl;
+                score_min = their_work_board->count(us); // New minimum score
+                their_ideal_m_for_ours = their_m;
+            }
+        
+            // Clean up everything used for this one of their moves
+            std::cerr << "        MEMORY: Deleting their_work_board at " << their_work_board << std::endl;
+            delete their_work_board;
+            std::cerr << "        MEMORY: Deleted their_work_board successfully " << std::endl;
 
         }
         
         // Found their ideal move
-        std::cerr << "    Opponent will do: (" << their_ideal_m->getX()
-        << ", " << their_ideal_m->getY() << ")" << std::endl;
+        std::cerr << "      Opponent will do: (" << their_ideal_m_for_ours->getX()
+        << ", " << their_ideal_m_for_ours->getY() << ")" << std::endl;
 
         // Update our ideal move
-        if (their_ideal_m->getX() != -1) { // They had countermoves
+        if (their_moves.size() > 0) { // They had countermoves
             our_work_board->doMove(their_ideal_m, them);
         }
         if (our_work_board->count(us) > score_max) {
-            std::cerr << "    Our best move so far" << std::endl;
+            std::cerr << "      Our best move so far" << std::endl;
             score_max = our_work_board->count(us); // New maximum score
             our_ideal_m = our_m;
-            std::cerr << "    Updated our ideal move" << std::endl;
+            their_ideal_m = their_ideal_m_for_ours;
         }
 
-        // Clean up everything used to calculate their move
-        delete their_work_board;
+        // Clean up everything used to calculate for this one of our moves
+        std::cerr << "      MEMORY: Deleting our_work_board at " << our_work_board << std::endl;
+        delete our_work_board;
+        std::cerr << "      MEMORY: Deleted our_work_board succesfully" << std::endl;
 
     }
 
-    // Clean up everything used to calculate our move
-    delete our_work_board;
-
     // Return move pair
+    std::cerr << "  Returning moves!" << std::endl;
+    std::cerr << "  We will do: (" << our_ideal_m->getX() << ", " << our_ideal_m->getY() << ")" << std::endl;
+    std::cerr << "  They should do: (" << their_ideal_m->getX() << ", " << their_ideal_m->getY() << ")" << std::endl;
+    std::cerr << "  Putting our move into output package" << std::endl; 
     moves->first = our_ideal_m;
+    std::cerr << "  Putting their expected move into output package" << std::endl; 
     moves->second = their_ideal_m;
     return moves;
 
