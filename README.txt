@@ -1,1 +1,10 @@
-To be filled later
+In the first week, Zach created the github and wrote the basic AI including constructor and methods which picks a move at random. Aritra and Zach together drew out the plan for coding up the heuristic and minimax algorithms in addition to deciding how the minimax algorithm could be written so that a depth n recursion could be implemented easily. Aritra then wrote the code for the minimax which incoporated the heuristic.
+
+After week one, Zach had already passed CS2 with enough points while Aritra still needed a few more points. While Zach was out of town at a conference, Aritra wrote the implementation of depth-n recursion for the minimax algorithm and made sure to check for any memory issues. Zach then implemented a scoring function which accounts for corners, edges, and adjacent-to-corner pieces as opposed to using a simple count of stones.
+
+-----
+
+The following improvements make our AI tournament worthy:
+- Our minimax algorithm is capable of looking n moves in the future using recursion. Currently, we have it set to look 3 moves in the future. We have "one move into the future" defined as the following: When it is black's move, we look at all of black's possible moves, and for each of these we look at all of white's possible moves, and then we calculate black's score after each white move. We then choose the initial black move that minimizes our maximum loss. Since our algorithm works 3 times deeper than this, we are confident that we have built a tournament-winning AI.
+
+- Our scoring function starts by looking at the difference in the number of stones currently on the board, but then adjusts for the fact that corners are the best spots (+10 for corner) and edges are also good (+3 for edge), but edge pieces adjacent to the corners are not good (-3) since the other player can capture the corner, and diagonally-adjacent pieces to the corners are even worse (-10) since the other player can more easily take the corner.

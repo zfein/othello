@@ -29,6 +29,9 @@ public:
     int count(Side side);
     int countBlack();
     int countWhite();
+    int score(Side side);
+    int scoreBlack();
+    int scoreWhite();
 
     void setBoard(char data[]);
 };

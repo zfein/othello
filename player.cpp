@@ -97,6 +97,8 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
 
 MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
 
+    int movesmade = 0; 
+    int movesdelete = 0;
     // Sanity check for depth argument
     if (depth < 1) {
         std::cerr << "  FATAL ERROR: pickMove() called with depth < 1" << std::endl;
@@ -111,10 +113,11 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             Move *here = new Move(i, j);
+            movesmade++;
             if (start_board->checkMove(here, us)) {
                 our_moves.push_back(here);
             }
-            else { delete here; }
+            else { delete here; movesdelete++;}
         }
     }
     if (verbose)
@@ -135,9 +138,11 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
     // Prepare to find our ideal move
     int score_max = TINY_SCORE; // After their ideal move
     Move *our_ideal_m = new Move(-1, -1);
+    movesmade++;
 
     // Prepare ahead to find their ideal move
     Move *their_ideal_m = new Move(-1, -1);
+    movesmade++;
 
     // For each of our moves...
     for (unsigned int i = 0; i < our_moves.size(); i++) {
@@ -159,10 +164,11 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
         for (int j = 0; j < 8; j++) {
             for (int k = 0; k < 8; k++) {
                 Move *here = new Move(j, k);
+                movesmade++;
                 if (our_work_board->checkMove(here, us)) {
                     their_moves.push_back(here);
                 }
-                else { delete here; }
+                else { delete here; movesdelete++;}
             }
         }
         if (verbose)
@@ -171,6 +177,7 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
         // Prepare to find their ideal move
         int score_min = HUGE_SCORE; // After their trial move
         Move *their_ideal_m_for_ours = new Move(-1, -1);
+        movesmade++;
 
         // For each of their moves...
         for (unsigned int j = 0; j < their_moves.size(); j++) {
@@ -236,10 +243,10 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
             }
 
             // Update their ideal move using their working board
-            if (their_work_board->count(us) < score_min) {
+            if (their_work_board->score(us) < score_min) {
                 if (verbose)
                    std::cerr << "        Their best move so far" << std::endl;
-                score_min = their_work_board->count(us); // New minimum score
+                score_min = their_work_board->score(us); // New minimum score
                 their_ideal_m_for_ours = their_m;
             }
 
@@ -253,19 +260,27 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
 
         }
         
+        Move *their_ideal_m_for_ours2 = new Move(-1, -1);
+        their_ideal_m_for_ours2->setX(their_ideal_m_for_ours->getX());
+        their_ideal_m_for_ours2->setY(their_ideal_m_for_ours->getY());
         // Found their ideal move
         if (verbose) {
-            std::cerr << "      Opponent will do: (" << their_ideal_m_for_ours->getX()
-            << ", " << their_ideal_m_for_ours->getY() << ")" << std::endl;
+            std::cerr << "      Opponent will do: (" << their_ideal_m_for_ours2->getX()
+            << ", " << their_ideal_m_for_ours2->getY() << ")" << std::endl;
         }
 
         // Set up score
         if (their_moves.size() > 0) { // They had countermoves
             
             // Update work board with their ideal countermove for this one of our moves
-            our_work_board->doMove(their_ideal_m_for_ours, them);
+            our_work_board->doMove(their_ideal_m_for_ours2, them);
 
             // their_ideal_m_for_ours is already filled
+            // Delete memory allocated to all their moves
+            for (unsigned int w = 0; w < their_moves.size(); w++) {
+                delete their_moves[w];
+                movesdelete++;
+            }
 
         }
         else { // They had no countermoves
@@ -273,18 +288,18 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
             // Work board is already updated
 
             // They have no ideal countermove for this one of our moves
-            their_ideal_m_for_ours = NULL;
+            their_ideal_m_for_ours2 = NULL;
 
         }
 
 
         // Update our ideal move
-        if (our_work_board->count(us) > score_max) {
+        if (our_work_board->score(us) > score_max) {
             if (verbose)
                 std::cerr << "      Our best move so far" << std::endl;
-            score_max = our_work_board->count(us); // New maximum score
+            score_max = our_work_board->score(us); // New maximum score
             our_ideal_m = our_m;
-            their_ideal_m = their_ideal_m_for_ours;
+            their_ideal_m = their_ideal_m_for_ours2;
         }
 
         // Clean up everything used to calculate for this one of our moves
@@ -309,9 +324,23 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
         }
         std::cerr << "  Putting our move into output package" << std::endl; 
     }
-    moves->first = our_ideal_m;
-    if (verbose)
+    Move *our_ideal_m2 = new Move(-1, -1);
+    our_ideal_m2->setX(our_ideal_m->getX());
+    our_ideal_m2->setY(our_ideal_m->getY());
+
+
+    for (unsigned int ww = 0; ww < our_moves.size(); ww++) {
+        delete our_moves[ww];
+        movesdelete++;
+    }
+
+    moves->first = our_ideal_m2;
+    if (verbose) {
         std::cerr << "  Putting their expected move into output package" << std::endl; 
+        std::cerr << "moves leaked = " << movesmade - movesdelete << std::endl;
+
+    }
+
     moves->second = their_ideal_m;
     return moves;
 

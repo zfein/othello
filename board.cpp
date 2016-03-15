@@ -164,6 +164,74 @@ int Board::countWhite() {
 }
 
 /*
+ * Current score of the given side's stones.
+ */
+int Board::score(Side side) {
+    return (side == BLACK) ? scoreBlack() : scoreWhite();
+}
+
+/*
+ * Current score of black stones -- corners and sides are more valuable.
+ */
+int Board::scoreBlack() {
+    // Start with the original score
+    int score = countBlack();
+    // Bonus for corners -- Corners are worth 10
+    score += 9 * (black[0] + black[7] + black[56] + black[63]);
+    // Bonus for edges -- Edges are worth 3
+    for (int i = 1; i < 7; i++) {
+        score += 2 * black[i]; // Top edge
+        score += 2 * black[56 + i]; // Bottom edge
+        score += 2 * black[i * 7 + 1]; // Left edge
+        score += 2 * black[i * 7 + 8]; // Right edge
+    }
+    // Penalty for edge piece adjacent to corner -- worth -3 total
+    for (int i = 0; i < 2; i++) {
+        // The adjacent pieces on the top and bottom edges
+        score -= 6 * black[56 * i + 1];
+        score -= 6 * black[56 * i + 6];
+        // The adjacent pieces on the left and right edges
+        score -= 6 * black[40 * i + 8];
+        score -= 6 * black[40 * i + 15];
+    }
+    // Penalty for piece diagonally adjacent to corner -- worth -10 total
+    score -= 11 * (black[9] + black[14] + black[49] + black[54]);
+
+    return score;
+}
+
+/*
+ * Current score of white stones -- corners and sides are more valuable.
+ */
+int Board::scoreWhite() {
+    // Get bitset of white stones -- spots that are taken but not black
+    bitset<64> white = (taken & ~black);
+    // Start with the original score
+    int score = countWhite();
+    // Bonus for corners -- Corners are worth 3
+    score += 2 * (white[0] + white[7] + white[56] + white[63]);
+    // Bonus for edges -- Edges are worth 2
+    for (int i = 1; i < 7; i++) {
+        score += white[i]; // Top edge
+        score += white[56 + i]; // Bottom edge
+        score += white[i * 7 + 1]; // Left edge
+        score += white[i * 7 + 8]; // Right edge
+    }
+    // Penalty for edge piece adjacent to corner -- worth -3 total
+    for (int i = 0; i < 2; i++) {
+        // The adjacent pieces on the top and bottom edges
+        score -= 6 * white[56 * i + 1];
+        score -= 6 * white[56 * i + 6];
+        // The adjacent pieces on the left and right edges
+        score -= 6 * white[40 * i + 8];
+        score -= 6 * white[40 * i + 15];
+    }
+    // Penalty for piece diagonally adjacent to corner -- worth -10 total
+    score -= 11 * (white[9] + white[14] + white[49] + white[54]);
+    return score;
+}
+
+/*
  * Sets the board state given an 8x8 char array where 'w' indicates a white
  * piece and 'b' indicates a black piece. Mainly for testing purposes.
  */
