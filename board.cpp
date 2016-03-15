@@ -178,12 +178,13 @@ int Board::scoreBlack() {
     int score = countBlack();
     // Bonus for corners -- Corners are worth 10
     score += 9 * (black[0] + black[7] + black[56] + black[63]);
+
     // Bonus for edges -- Edges are worth 3
     for (int i = 1; i < 7; i++) {
         score += 2 * black[i]; // Top edge
         score += 2 * black[56 + i]; // Bottom edge
-        score += 2 * black[i * 7 + 1]; // Left edge
-        score += 2 * black[i * 7 + 8]; // Right edge
+        score += 2 * black[i * 8]; // Left edge
+        score += 2 * black[i * 8 + 7]; // Right edge
     }
     // Penalty for edge piece adjacent to corner -- worth -3 total
     for (int i = 0; i < 2; i++) {
@@ -214,8 +215,8 @@ int Board::scoreWhite() {
     for (int i = 1; i < 7; i++) {
         score += white[i]; // Top edge
         score += white[56 + i]; // Bottom edge
-        score += white[i * 7 + 1]; // Left edge
-        score += white[i * 7 + 8]; // Right edge
+        score += white[i * 8 + 0]; // Left edge
+        score += white[i * 8 + 7]; // Right edge
     }
     // Penalty for edge piece adjacent to corner -- worth -3 total
     for (int i = 0; i < 2; i++) {
