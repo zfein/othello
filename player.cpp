@@ -113,12 +113,11 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
     std::vector<Move *> our_moves;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            Move *here = new Move(i, j);
-            movesmade++;
+            Move *here = new Move(i, j); movesmade++;
             if (start_board->checkMove(here, us)) {
                 our_moves.push_back(here);
             }
-            else { delete here; movesdelete++;}
+            else { delete here; movesdelete++; }
         }
     }
     if (verbose)
@@ -162,12 +161,11 @@ MovePair *Player::pickMove(Board *start_board, int depth, bool verbose) {
         std::vector<Move *> their_moves;
         for (int j = 0; j < 8; j++) {
             for (int k = 0; k < 8; k++) {
-                Move *here = new Move(j, k);
-                movesmade++;
+                Move *here = new Move(j, k); movesmade++;
                 if (our_work_board->checkMove(here, us)) {
                     their_moves.push_back(here);
                 }
-                else { delete here; movesdelete++;}
+                else { delete here; movesdelete++; }
             }
         }
         if (verbose)
