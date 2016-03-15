@@ -209,14 +209,15 @@ int Board::scoreWhite() {
     bitset<64> white = (taken & ~black);
     // Start with the original score
     int score = countWhite();
-    // Bonus for corners -- Corners are worth 3
-    score += 2 * (white[0] + white[7] + white[56] + white[63]);
-    // Bonus for edges -- Edges are worth 2
+    // Bonus for corners -- Corners are worth 10
+    score += 9 * (white[0] + white[7] + white[56] + white[63]);
+
+    // Bonus for edges -- Edges are worth 3
     for (int i = 1; i < 7; i++) {
-        score += white[i]; // Top edge
-        score += white[56 + i]; // Bottom edge
-        score += white[i * 8 + 0]; // Left edge
-        score += white[i * 8 + 7]; // Right edge
+        score += 2 * white[i]; // Top edge
+        score += 2 * white[56 + i]; // Bottom edge
+        score += 2 * white[i * 8]; // Left edge
+        score += 2 * white[i * 8 + 7]; // Right edge
     }
     // Penalty for edge piece adjacent to corner -- worth -3 total
     for (int i = 0; i < 2; i++) {
@@ -229,9 +230,9 @@ int Board::scoreWhite() {
     }
     // Penalty for piece diagonally adjacent to corner -- worth -10 total
     score -= 11 * (white[9] + white[14] + white[49] + white[54]);
+
     return score;
 }
-
 /*
  * Sets the board state given an 8x8 char array where 'w' indicates a white
  * piece and 'b' indicates a black piece. Mainly for testing purposes.
